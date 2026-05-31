@@ -1,12 +1,11 @@
 {
   "name": "lms-pages",
-  "private": true,
   "version": "0.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "server": "node server/index-windows.js",
+    "server": "node server.js",
     "dev:all": "concurrently \"npm run server\" \"npm run dev\"",
     "ollama:setup": "scripts/setup-ollama.bat",
     "ollama:test": "ollama run phi:2.7b 'Hello, how are you?'",
