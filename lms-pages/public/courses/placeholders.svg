@@ -1,0 +1,5 @@
+<!-- public/courses/web-dev-basics.svg -->
+<svg width="400" height="200" xmlns="http://www.w3.org/2000/svg">
+  <rect width="400" height="200" fill="#6366f1"/>
+  <text x="200" y="100" text-anchor="middle" fill="white" font-size="20">🌐 Web Development</text>
+</svg>
