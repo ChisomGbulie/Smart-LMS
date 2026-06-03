@@ -1,9 +1,11 @@
 // src/pages/Courses.jsx
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { courses, categories } from '../data/courses';
 import { BookOpen, Clock, Star, Users, ChevronRight } from 'lucide-react';
 
 export default function Courses() {
+  const navigate = useNavigate();
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedLevel, setSelectedLevel] = useState('All');
@@ -113,7 +115,10 @@ export default function Courses() {
                 }`}>
                   {course.level}
                 </span>
-                <button className="text-blue-600 hover:text-blue-700 text-sm font-medium flex items-center">
+                <button 
+                  onClick={() => navigate(`/course/${course.id}`)}
+                  className="text-blue-600 hover:text-blue-700 text-sm font-medium flex items-center transition-colors duration-200"
+                >
                   Enroll Now <ChevronRight className="h-4 w-4 ml-1" />
                 </button>
               </div>
