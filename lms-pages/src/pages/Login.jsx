@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { Sparkles } from 'lucide-react'
 import { supabase } from '../utils/supabase'
 
 export default function Login() {
@@ -46,14 +47,21 @@ export default function Login() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-blue-600 mb-4 shadow-lg">
-            <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-            </svg>
+        {/* Smart-LMS Header */}
+        <div className="text-center mb-12">
+          {/* Logo and Title */}
+          <div className="flex items-center justify-center space-x-3 mb-8">
+            <div className="bg-gradient-to-r from-blue-600 to-purple-600 p-2 rounded-lg">
+              <Sparkles className="h-6 w-6 text-white" />
+            </div>
+            <span className="font-bold text-xl bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+              Smart-LMS
+            </span>
           </div>
-          <h1 className="text-2xl font-bold text-slate-800">Welcome back</h1>
-          <p className="text-slate-500 mt-1 text-sm">Sign in to your account to continue</p>
+          
+          {/* Page Title */}
+          <h1 className="text-2xl font-bold text-slate-800 mb-2">Welcome back</h1>
+          <p className="text-slate-500 text-sm">Sign in to your account to continue</p>
         </div>
 
         <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-8">

@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { Sparkles } from 'lucide-react'
 import { supabase } from '../utils/supabase'
 
 export default function Signup() {
@@ -10,6 +11,7 @@ export default function Signup() {
   const [confirmPassword, setConfirmPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [showSuccess, setShowSuccess] = useState(false)
 
   // Email validation function
   const isValidEmail = (email) => {
@@ -53,6 +55,8 @@ export default function Signup() {
       // Handle specific error messages
       if (signUpError.message.includes('email_address_invalid')) {
         setError('Please use a valid email address. Some domains like example.com are not accepted.')
+      } else if (signUpError.message.includes('Signups not allowed')) {
+        setError('Signups are currently disabled. Please contact support or check back later.')
       } else {
         setError(signUpError.message)
       }
@@ -61,8 +65,8 @@ export default function Signup() {
       if (data?.user?.identities?.length === 0) {
         setError('An account with this email already exists. Please sign in instead.')
       } else {
-        // Successfully signed up
-        navigate('/dashboard')
+        // Successfully signed up - show success modal
+        setShowSuccess(true)
       }
     }
   }
@@ -72,14 +76,21 @@ export default function Signup() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-blue-600 mb-4 shadow-lg">
-            <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
-            </svg>
+        {/* Smart-LMS Header */}
+        <div className="text-center mb-12">
+          {/* Logo and Title */}
+          <div className="flex items-center justify-center space-x-3 mb-8">
+            <div className="bg-gradient-to-r from-blue-600 to-purple-600 p-2 rounded-lg">
+              <Sparkles className="h-6 w-6 text-white" />
+            </div>
+            <span className="font-bold text-xl bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+              Smart-LMS
+            </span>
           </div>
-          <h1 className="text-2xl font-bold text-slate-800">Create an account</h1>
-          <p className="text-slate-500 mt-1 text-sm">Get started for free today</p>
+          
+          {/* Page Title */}
+          <h1 className="text-2xl font-bold text-slate-800 mb-2">Create an account</h1>
+          <p className="text-slate-500 text-sm">Get started for free today</p>
         </div>
 
         <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-8">
@@ -208,6 +219,42 @@ export default function Signup() {
           </Link>
         </p>
       </div>
+
+      {/* Success Modal */}
+      {showSuccess && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-2xl shadow-lg max-w-sm w-full p-8 text-center">
+            {/* Success Icon */}
+            <div className="flex justify-center mb-4">
+              <div className="flex items-center justify-center w-16 h-16 rounded-full bg-emerald-100">
+                <svg className="w-8 h-8 text-emerald-600" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                </svg>
+              </div>
+            </div>
+
+            {/* Title and Message */}
+            <h2 className="text-2xl font-bold text-slate-800 mb-2">Account Created!</h2>
+            <p className="text-slate-600 text-sm mb-6">
+              Your account has been created successfully. You can now sign in with your email and password.
+            </p>
+
+            {/* Email Display */}
+            <div className="bg-slate-50 rounded-lg p-3 mb-6 border border-slate-200">
+              <p className="text-xs text-slate-500 mb-1">Account Email</p>
+              <p className="text-sm font-medium text-slate-800 break-all">{email}</p>
+            </div>
+
+            {/* Button */}
+            <button
+              onClick={() => navigate('/login')}
+              className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-2.5 px-4 rounded-xl text-sm transition-colors duration-200"
+            >
+              Go to Login
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
