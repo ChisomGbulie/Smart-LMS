@@ -341,62 +341,9 @@ const handleChatSubmit = async (e) => {
   
   // Check if user is asking about their assessment
   if (userMessage.includes('assessment') && isAssessed && assessmentResults) {
-    // Determine technology based on career goal
-    const getTechnology = (careerGoal) => {
-      const goal = careerGoal.toLowerCase();
-      if (goal.includes('frontend')) return 'React';
-      if (goal.includes('backend')) return 'Node.js';
-      if (goal.includes('full stack')) return 'React & Node.js';
-      if (goal.includes('mobile')) return 'React Native';
-      if (goal.includes('data')) return 'Python';
-      return 'Web Technologies';
-    };
-
-    const technology = getTechnology(assessmentResults.careerGoal);
-    const skillLevel = assessmentResults.skillLevel;
-
-    // Get recommended courses (show first 3 relevant courses)
-    const recommendedCourses = allCourses.slice(0, 3).map(c => `• ${c.title}`).join('\n');
-
-    const assessmentMessage = `✅ **Assessment Complete!**
-
-Based on your answers:
-• **Career Path:** ${assessmentResults.careerGoal}
-• **Technology:** ${technology}
-• **Skill Level:** ${skillLevel}
-
-📚 **Your ${assessmentResults.careerGoal} Learning Roadmap for ${skillLevel}s:**
-
-**Phase 1: Foundations (2-3 weeks)**
-• Core fundamentals for your stack
-• Essential programming concepts
-• Development environment setup
-
-**Phase 2: Core Skills (3-4 weeks)**
-• Deep dive into ${technology}
-• Building interactive components
-• State management & data flow
-• Best practices & patterns
-
-**Phase 3: Real Projects (3-4 weeks)**
-• Build 2-3 real-world projects
-• Deploy to production
-• Create professional portfolio
-
-**🎓 Recommended Courses for You:**
-${recommendedCourses}
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-✨ **Ready to start learning?** ✨
-
-Click the button below to browse all courses and enroll in your recommended learning path!`;
-
-    setChatMessages(prev => [...prev, { 
-      type: 'bot', 
-      message: assessmentMessage,
-      showCoursesButton: true 
-    }]);
+    // Display assessment results immediately
+    const assessmentMessage = `📋 **Your Career Assessment Results:**\n\n🎯 Career Goal: ${assessmentResults.careerGoal}\n📊 Skill Level: ${assessmentResults.skillLevel}\n🔥 Job Market Fit: ${assessmentResults.marketFit}%\n\nBased on your assessment, you're ${assessmentResults.marketFit}% aligned with current job market demands for a ${assessmentResults.careerGoal} position.\n\nWould you like me to recommend specific courses, show you job opportunities, or discuss required skills?`;
+    setChatMessages(prev => [...prev, { type: 'bot', message: assessmentMessage }]);
     return;
   }
   
@@ -860,7 +807,7 @@ Click the button below to browse all courses and enroll in your recommended lear
           !isAssessed && chatMessages.length === 0 
             ? "Click 'Begin Assessment' to start..." 
             : isAssessed 
-              ? "Ask about courses, jobs, skills or projects..." 
+              ? "Ask about your Assessment results, courses, or job market insights..." 
               : "Type your answer here..."
         }
         className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"

@@ -1,5 +1,6 @@
 import express from 'express';
 import cors from 'cors';
+import { saveAssessment, getAssessment, saveLearningPath, getLearningPath, deleteAssessment } from './server/utils/assessmentDB.js';
 
 const app = express();
 
@@ -8,6 +9,9 @@ app.use(express.json());
 
 // Store conversation state for each user
 const conversationState = new Map();
+
+// Store assessment results for each user (persists after assessment)
+const assessmentResults = new Map();
 
 // Define assessment questions in sequence
 const assessmentQuestions = {
@@ -20,7 +24,7 @@ const assessmentQuestions = {
       return valid.includes(answer.toLowerCase());
     },
     parse: (answer) => {
-      const mapping = {
+      const mapping= {
         'frontend': 'Frontend Developer',
         'backend': 'Backend Developer',
         'full stack': 'Full Stack Developer',
@@ -310,8 +314,12 @@ app.post('/api/chat', async (req, res) => {
   
   // If already assessed, handle as regular chat
   if (isAssessed) {
-    const reply = handleRegularChat(message, userProfile);
-    return res.json({ reply });
+    const response = handleRegularChat(message, userProfile, userId);
+    if (typeof response === 'string') {
+      return res.json({ reply: response });
+    } else {
+      return res.json(response);
+    }
   }
   
   // Get or create conversation state for this user
@@ -427,6 +435,31 @@ app.post('/api/chat', async (req, res) => {
     // Build courses list string
     const coursesList = recommendedCourses.map(course => `• ${course}`).join('\n');
     
+    // Save assessment to database
+    const assessmentData = {
+      careerGoal,
+      specialization: specificTech,
+      experienceLevel: skillLevel,
+      yearsExperience: 0
+    };
+    await saveAssessment(userId, assessmentData);
+    
+    // Save learning path to database
+    const pathData = {
+      roadmapContent: roadmap,
+      recommendedCourses: recommendedCourses
+    };
+    await saveLearningPath(userId, pathData);
+    
+    // Store assessment results for later retrieval (in-memory for session)
+    assessmentResults.set(userId, {
+      careerGoal,
+      specificTech,
+      skillLevel,
+      recommendedCourses,
+      roadmap
+    });
+    
     // Clear conversation state
     conversationState.delete(userId);
     
@@ -451,8 +484,23 @@ app.post('/api/chat', async (req, res) => {
 });
 
 // Regular chat handler after assessment is complete
-function handleRegularChat(message, userProfile) {
+function handleRegularChat(message, userProfile, userId) {
   const lowerMsg = message.toLowerCase();
+  
+  // Handle assessment request
+  if (lowerMsg.includes('assessment')) {
+    const results = assessmentResults.get(userId);
+    if (results) {
+      const { careerGoal, specificTech, skillLevel, roadmap, recommendedCourses } = results;
+      const coursesList = recommendedCourses.map(course => `• ${course}`).join('\n');
+      
+      return {
+        reply: `✅ **Assessment Complete!**\n\nBased on your answers:\n• **Career Path:** ${careerGoal}\n• **Technology:** ${specificTech}\n• **Skill Level:** ${skillLevel}\n\n${roadmap}\n\n**🎓 Recommended Courses for You:**\n${coursesList}\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n✨ **Ready to start learning?** ✨\n\nClick the button below to browse all courses and enroll in your recommended path!`,
+        showCoursesButton: true
+      };
+    }
+    return "You haven't completed an assessment yet. Would you like to start one?";
+  }
   
   if (lowerMsg.includes('course') || lowerMsg.includes('learn')) {
     return "📚 **Recommended Courses:**\n\n• Introduction to Web Development\n• JavaScript Fundamentals to Advanced\n• React.js Mastery\n• Node.js & Express Backend Development\n\nVisit the Courses page to enroll! 🎓";
@@ -470,8 +518,105 @@ function handleRegularChat(message, userProfile) {
     return "🎯 **Portfolio Project Ideas:**\n\n• E-commerce Website\n• Task Management App\n• Blog Platform with CMS\n• Real-time Chat Application\n• Dashboard with Analytics\n\nStart with a simple project and scale up!";
   }
   
-  return "I'm here to help with your learning journey! Ask me about:\n\n• 📚 Courses (type 'courses')\n• 💼 Jobs & salaries (type 'jobs')\n• 🔧 Skills (type 'skills')\n• 🎯 Projects (type 'projects')\n\nWhat would you like to know?";
+  return "I'm here to help with your learning journey! Ask me about:\n\n• 📚 Courses (type 'courses')\n• 💼 Jobs & salaries (type 'jobs')\n• 🔧 Skills (type 'skills')\n• 🎯 Projects (type 'projects')\n• 📋 Assessment (type 'assessment')\n\nWhat would you like to know?";
 }
+
+// API Endpoints for Assessment Management
+// Get user's assessment
+app.get('/api/assessment/:userId', async (req, res) => {
+  const { userId } = req.params;
+  
+  try {
+    const result = await getAssessment(userId);
+    
+    if (!result.success) {
+      return res.status(404).json({ 
+        exists: false,
+        message: 'No assessment found for this user' 
+      });
+    }
+    
+    return res.json({
+      exists: true,
+      assessment: result.data
+    });
+  } catch (error) {
+    console.error('Error fetching assessment:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get user's learning path
+app.get('/api/learning-path/:userId', async (req, res) => {
+  const { userId } = req.params;
+  
+  try {
+    const result = await getLearningPath(userId);
+    
+    if (!result.success || !result.exists) {
+      return res.status(404).json({ 
+        exists: false,
+        message: 'No learning path found for this user' 
+      });
+    }
+    
+    return res.json({
+      exists: true,
+      learningPath: result.data
+    });
+  } catch (error) {
+    console.error('Error fetching learning path:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Retake assessment - delete existing and start fresh
+app.post('/api/retake-assessment/:userId', async (req, res) => {
+  const { userId } = req.params;
+  
+  try {
+    const result = await deleteAssessment(userId);
+    
+    if (!result.success) {
+      return res.status(500).json({ error: result.error });
+    }
+    
+    // Clear from memory as well
+    assessmentResults.delete(userId);
+    conversationState.delete(userId);
+    
+    return res.json({ 
+      success: true,
+      message: 'Assessment deleted. Ready to start a new one!' 
+    });
+  } catch (error) {
+    console.error('Error deleting assessment:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get complete user profile with assessment and learning path
+app.get('/api/user-profile/:userId', async (req, res) => {
+  const { userId } = req.params;
+  
+  try {
+    const assessment = await getAssessment(userId);
+    const learningPath = await getLearningPath(userId);
+    
+    const profile = {
+      userId,
+      hasAssessment: assessment.exists,
+      assessment: assessment.exists ? assessment.data : null,
+      hasLearningPath: learningPath.exists,
+      learningPath: learningPath.exists ? learningPath.data : null
+    };
+    
+    return res.json(profile);
+  } catch (error) {
+    console.error('Error fetching user profile:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
 
 // Clean up old conversation states every hour
 setInterval(() => {
