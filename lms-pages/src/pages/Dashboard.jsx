@@ -70,9 +70,51 @@ export default function Dashboard() {
   
   // Assessment Status
   const [isAssessed, setIsAssessed] = useState(false)
+  const [showAssessmentCompleteModal, setShowAssessmentCompleteModal] = useState(false)
+  const [assessmentResults, setAssessmentResults] = useState(null)
 
   const assessmentStartedRef = useRef(false);
   const initialMessageSentRef = useRef(false);
+  const assessmentCompletedRef = useRef(false);
+
+  // Load assessment state from localStorage on mount
+  useEffect(() => {
+    const savedAssessmentState = localStorage.getItem(`assessment_completed_${user?.id}`);
+    if (savedAssessmentState === 'true') {
+      setIsAssessed(true);
+    }
+  }, [user?.id]);
+
+  // Save assessment state to localStorage when it changes to true
+  useEffect(() => {
+    if (isAssessed && user?.id) {
+      localStorage.setItem(`assessment_completed_${user.id}`, 'true');
+    }
+  }, [isAssessed, user?.id]);
+
+  // Save chat messages to localStorage whenever they change
+  useEffect(() => {
+    if (user?.id && chatMessages.length > 0) {
+      localStorage.setItem(`chat_messages_${user.id}`, JSON.stringify(chatMessages));
+    }
+  }, [chatMessages, user?.id]);
+
+  // Load and display chat messages when assessment is completed
+  useEffect(() => {
+    if (isAssessed && user?.id && chatMessages.length === 0) {
+      const savedChatMessages = localStorage.getItem(`chat_messages_${user.id}`);
+      if (savedChatMessages) {
+        try {
+          const messages = JSON.parse(savedChatMessages);
+          if (messages.length > 0) {
+            setChatMessages(messages);
+          }
+        } catch (error) {
+          console.error('Error loading chat messages:', error);
+        }
+      }
+    }
+  }, [isAssessed, user?.id]);
 
   // Handle Sign Out
   const handleSignOut = async () => {
@@ -263,13 +305,21 @@ export default function Dashboard() {
       await fetchJobMatches()
       await fetchInDemandSkills()
       
-      if (!isAssessed) {
-        setChatMessages([]);
-      } else {
-        setChatMessages([{
-          type: 'bot',
-          message: `👋 Welcome back! Your learning path is ${userProfile.marketFit}% aligned with current job market demands.\n\nI see you're aiming to become a ${userProfile.careerGoal} (${userProfile.skillLevel} level).\n\nAsk me about:\n• 📚 Course recommendations\n• 💼 Job market & salaries\n• 🔧 Required skills\n• 🗺️ Your learning roadmap\n\nWhat would you like to know?`
-        }]);
+      // Only clear/set messages if not already populated from localStorage
+      if (chatMessages.length === 0) {
+        if (!isAssessed) {
+          setChatMessages([]);
+        } else {
+          // Try to load from localStorage
+          const savedChatMessages = localStorage.getItem(`chat_messages_${user?.id}`);
+          if (!savedChatMessages) {
+            // Only show welcome message if no saved messages
+            setChatMessages([{
+              type: 'bot',
+              message: `👋 Welcome back! Your learning path is ${userProfile.marketFit}% aligned with current job market demands.\n\nI see you're aiming to become a ${userProfile.careerGoal} (${userProfile.skillLevel} level).\n\nI'm here to help with your learning journey! Ask me about:\n• 📚 Courses (type 'courses')\n• 💼 Jobs & salaries (type 'jobs')\n• 🔧 Skills (type 'skills')\n• 🎯 Projects (type 'projects')\n• 📋 Assessment (type 'assessment')\n\nWhat would you like to know?`
+            }]);
+          }
+        }
       }
       console.log("loadDashboardData completed");
     } catch (error) {
@@ -285,9 +335,71 @@ const handleChatSubmit = async (e) => {
   e.preventDefault();
   if (!chatInput.trim() || chatLoading) return;
 
-  const userMessage = chatInput.trim();
-  setChatMessages(prev => [...prev, { type: 'user', message: userMessage }]);
+  const userMessage = chatInput.trim().toLowerCase();
+  setChatMessages(prev => [...prev, { type: 'user', message: chatInput.trim() }]);
   setChatInput('');
+  
+  // Check if user is asking about their assessment
+  if (userMessage.includes('assessment') && isAssessed && assessmentResults) {
+    // Determine technology based on career goal
+    const getTechnology = (careerGoal) => {
+      const goal = careerGoal.toLowerCase();
+      if (goal.includes('frontend')) return 'React';
+      if (goal.includes('backend')) return 'Node.js';
+      if (goal.includes('full stack')) return 'React & Node.js';
+      if (goal.includes('mobile')) return 'React Native';
+      if (goal.includes('data')) return 'Python';
+      return 'Web Technologies';
+    };
+
+    const technology = getTechnology(assessmentResults.careerGoal);
+    const skillLevel = assessmentResults.skillLevel;
+
+    // Get recommended courses (show first 3 relevant courses)
+    const recommendedCourses = allCourses.slice(0, 3).map(c => `• ${c.title}`).join('\n');
+
+    const assessmentMessage = `✅ **Assessment Complete!**
+
+Based on your answers:
+• **Career Path:** ${assessmentResults.careerGoal}
+• **Technology:** ${technology}
+• **Skill Level:** ${skillLevel}
+
+📚 **Your ${assessmentResults.careerGoal} Learning Roadmap for ${skillLevel}s:**
+
+**Phase 1: Foundations (2-3 weeks)**
+• Core fundamentals for your stack
+• Essential programming concepts
+• Development environment setup
+
+**Phase 2: Core Skills (3-4 weeks)**
+• Deep dive into ${technology}
+• Building interactive components
+• State management & data flow
+• Best practices & patterns
+
+**Phase 3: Real Projects (3-4 weeks)**
+• Build 2-3 real-world projects
+• Deploy to production
+• Create professional portfolio
+
+**🎓 Recommended Courses for You:**
+${recommendedCourses}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+✨ **Ready to start learning?** ✨
+
+Click the button below to browse all courses and enroll in your recommended learning path!`;
+
+    setChatMessages(prev => [...prev, { 
+      type: 'bot', 
+      message: assessmentMessage,
+      showCoursesButton: true 
+    }]);
+    return;
+  }
+  
   setChatLoading(true);
 
   try {
@@ -328,8 +440,9 @@ const handleChatSubmit = async (e) => {
       setChatMessages(prev => [...prev, { type: 'bot', message: data.reply }]);
     }
     
-    if (data.assessmentComplete && !isAssessed) {
+    if (data.assessmentComplete && !isAssessed && !assessmentCompletedRef.current) {
       console.log('Assessment completed!');
+      assessmentCompletedRef.current = true;
       setIsAssessed(true);
       setUserProfile(prev => ({
         ...prev,
@@ -337,6 +450,16 @@ const handleChatSubmit = async (e) => {
         careerGoal: data.careerGoal || prev.careerGoal,
         marketFit: data.marketFit || 75
       }));
+      
+      // Store assessment results for later display
+      setAssessmentResults({
+        skillLevel: data.skillLevel || userProfile.skillLevel,
+        careerGoal: data.careerGoal || userProfile.careerGoal,
+        marketFit: data.marketFit || 75
+      });
+      
+      // Show success modal
+      setShowAssessmentCompleteModal(true);
       
       assessmentStartedRef.current = false;
       initialMessageSentRef.current = false;
@@ -348,7 +471,7 @@ const handleChatSubmit = async (e) => {
             is_assessed: true,
             skill_level: data.skillLevel || userProfile.skillLevel,
             career_goal: data.careerGoal || userProfile.careerGoal,
-            market_fit: data.marketFit || 75,
+            market_fit: data.marketFit || 0,
             updated_at: new Date()
           })
           .eq('user_id', user.id);
@@ -737,7 +860,7 @@ const handleChatSubmit = async (e) => {
           !isAssessed && chatMessages.length === 0 
             ? "Click 'Begin Assessment' to start..." 
             : isAssessed 
-              ? "Ask about courses, jobs, or skills..." 
+              ? "Ask about courses, jobs, skills or projects..." 
               : "Type your answer here..."
         }
         className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
@@ -860,6 +983,60 @@ const handleChatSubmit = async (e) => {
             </div>
           </div>
         </div>
+
+        {/* Assessment Complete Modal */}
+        {showAssessmentCompleteModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+            <div className="bg-white rounded-2xl shadow-lg max-w-md w-full p-8 text-center">
+              {/* Success Icon */}
+              <div className="flex justify-center mb-4">
+                <div className="flex items-center justify-center w-16 h-16 rounded-full bg-emerald-100">
+                  <svg className="w-8 h-8 text-emerald-600" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                  </svg>
+                </div>
+              </div>
+
+              {/* Title and Message */}
+              <h2 className="text-2xl font-bold text-slate-800 mb-3">Assessment Complete! 🎉</h2>
+              <p className="text-slate-600 mb-2">
+                Great job! Your assessment is complete.
+              </p>
+              <p className="text-slate-500 text-sm mb-6">
+                Based on your responses, we've personalized your learning path as a <span className="font-semibold text-slate-700">{userProfile.careerGoal}</span> ({userProfile.skillLevel}).
+              </p>
+
+              {/* Market Fit */}
+              <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg p-4 mb-6 border border-blue-100">
+                <p className="text-sm text-slate-600 mb-1">Your Job Market Fit</p>
+                <div className="flex items-center justify-center gap-2">
+                  <p className="text-3xl font-bold text-transparent bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text">{userProfile.marketFit}%</p>
+                  <span className="text-sm text-slate-600">aligned with market demands</span>
+                </div>
+              </div>
+
+              {/* Buttons */}
+              <div className="space-y-3">
+                <button
+                  onClick={() => {
+                    setShowAssessmentCompleteModal(false);
+                    navigate('/courses');
+                  }}
+                  className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold py-3 px-4 rounded-xl text-sm transition-all duration-200 flex items-center justify-center gap-2 shadow-md"
+                >
+                  📚 Browse All Courses
+                  <ExternalLink className="h-4 w-4" />
+                </button>
+                <button
+                  onClick={() => setShowAssessmentCompleteModal(false)}
+                  className="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold py-3 px-4 rounded-xl text-sm transition-all duration-200"
+                >
+                  Continue to Dashboard
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </main>
     </div>
   )

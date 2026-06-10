@@ -190,6 +190,15 @@ export default function Signup() {
                   </span>
                 )}
               </div>
+              {confirmPassword.length > 0 && (
+                <p className={`text-xs mt-2 font-medium ${
+                  passwordsMatch 
+                    ? 'text-emerald-600' 
+                    : 'text-red-600'
+                }`}>
+                  {passwordsMatch ? '✓ Passwords match' : '✗ Passwords don\'t match'}
+                </p>
+              )}
             </div>
 
             <button

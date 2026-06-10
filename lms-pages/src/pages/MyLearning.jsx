@@ -96,12 +96,12 @@ export default function MyLearning() {
       const avgProgress = total > 0 ? Math.round(enrolled.reduce((sum, c) => sum + c.progress, 0) / total) : 0;
 
       setStats({
-        totalCourses: total,
-        completedCourses: completed,
-        inProgressCourses: inProgress,
-        totalHours: totalHours,
-        completedHours: Math.round(completedHours),
-        averageProgress: avgProgress
+        totalCourses: 0,
+        completedCourses: 0,
+        inProgressCourses: 0,
+        totalHours: 0,
+        completedHours: 0,
+        averageProgress: 0
       });
 
     } catch (error) {
