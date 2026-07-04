@@ -7,6 +7,10 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+app.get('/api/health', (req, res) => {
+  res.json({ ok: true, service: 'smart-lms-chat' });
+});
+
 // Store conversation state for each user
 const conversationState = new Map();
 
