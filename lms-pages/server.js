@@ -145,7 +145,6 @@ const learningRoadmaps = {
   'Frontend Developer': {
     'React': {
       beginner: `📚 **Your Frontend (React) Learning Roadmap for Beginners:**
-
 **Phase 1: Foundations (2-3 weeks)**
 • HTML5 & CSS3 fundamentals
 • JavaScript basics (variables, functions, arrays)
@@ -162,7 +161,6 @@ const learningRoadmaps = {
 • Deploy to Vercel/Netlify
 • Create GitHub portfolio`,
       intermediate: `📚 **Your Frontend (React) Learning Roadmap for Intermediate Level:**
-
 **Phase 1: Advanced React (2-3 weeks)**
 • Custom Hooks
 • useMemo & useCallback
@@ -178,7 +176,6 @@ const learningRoadmaps = {
 • API routes
 • TypeScript with React`,
       advanced: `📚 **Your Frontend (React) Learning Roadmap for Advanced Level:**
-
 **Phase 1: Architecture Patterns (2-3 weeks)**
 • Micro-frontends
 • Monorepo management
@@ -198,7 +195,6 @@ const learningRoadmaps = {
   'Backend Developer': {
     'Node.js': {
       beginner: `📚 **Your Backend (Node.js) Learning Roadmap for Beginners:**
-
 **Phase 1: JavaScript Fundamentals (2-3 weeks)**
 • Async/await & Promises
 • Event loop understanding
@@ -214,7 +210,6 @@ const learningRoadmaps = {
 • Authentication (JWT)
 • API documentation`,
       intermediate: `📚 **Your Backend (Node.js) Learning Roadmap for Intermediate Level:**
-
 **Phase 1: Advanced Express (2-3 weeks)**
 • Custom middleware
 • Rate limiting & security
@@ -230,7 +225,6 @@ const learningRoadmaps = {
 • Docker & containerization
 • CI/CD pipelines`,
       advanced: `📚 **Your Backend (Node.js) Learning Roadmap for Advanced Level:**
-
 **Phase 1: Microservices Architecture (3-4 weeks)**
 • Service decomposition
 • API Gateway patterns
@@ -250,7 +244,6 @@ const learningRoadmaps = {
   'Full Stack Developer': {
     'MERN': {
       beginner: `📚 **Your Full Stack (MERN) Learning Roadmap for Beginners:**
-
 **Phase 1: Frontend Foundations (4-5 weeks)**
 • HTML/CSS/JavaScript basics
 • React fundamentals
@@ -271,7 +264,6 @@ const learningRoadmaps = {
 • Deployment strategies
 • Portfolio development`,
       intermediate: `📚 **Your Full Stack (MERN) Learning Roadmap for Intermediate Level:**
-
 **Phase 1: Advanced Frontend (3 weeks)**
 • Custom hooks & context
 • Performance optimization
@@ -287,7 +279,6 @@ const learningRoadmaps = {
 • CI/CD pipelines
 • Cloud deployment`,
       advanced: `📚 **Your Full Stack (MERN) Learning Roadmap for Advanced Level:**
-
 **Phase 1: Architecture Design (3-4 weeks)**
 • Scalable architecture patterns
 • Microservices with Node.js
@@ -624,7 +615,7 @@ setInterval(() => {
   console.log('🧹 Cleaned up conversation states');
 }, 3600000);
 
-const PORT = 3001;
+const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
-  console.log(`🚀 Server running on http://localhost:3001`);
+  console.log(`🚀 Server running on port ${PORT}`);
 });

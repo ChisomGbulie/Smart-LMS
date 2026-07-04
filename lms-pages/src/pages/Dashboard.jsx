@@ -25,6 +25,7 @@ import {
 
 export default function Dashboard() {
   const navigate = useNavigate()
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001'
   const [user, setUser] = useState(null)
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState('overview')
@@ -167,7 +168,7 @@ export default function Dashboard() {
     setChatLoading(true);
     
     // Send the API call directly
-    fetch('http://localhost:3001/api/chat', {
+    fetch(`${API_BASE_URL}/api/chat`, {
       method: 'POST',
       headers: { 
         'Content-Type': 'application/json',
@@ -352,7 +353,7 @@ const handleChatSubmit = async (e) => {
   try {
     console.log('Sending message:', userMessage);
     
-    const response = await fetch('http://localhost:3001/api/chat', {
+    const response = await fetch(`${API_BASE_URL}/api/chat`, {
       method: 'POST',
       headers: { 
         'Content-Type': 'application/json',
