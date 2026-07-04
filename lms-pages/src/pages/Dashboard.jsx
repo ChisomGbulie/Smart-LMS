@@ -79,6 +79,32 @@ export default function Dashboard() {
   const initialMessageSentRef = useRef(false);
   const assessmentCompletedRef = useRef(false);
 
+  const getLocalFallbackReply = useCallback((message = '') => {
+    const lowerMessage = message.toLowerCase();
+
+    if (lowerMessage.includes('course') || lowerMessage.includes('learn')) {
+      return `📚 Here are a few starter course ideas:\n• Web Development Foundations\n• JavaScript Fundamentals\n• React.js Basics\n• Node.js Backend Basics`;
+    }
+
+    if (lowerMessage.includes('job') || lowerMessage.includes('salary') || lowerMessage.includes('career')) {
+      return `💼 A strong next step is to explore roles like Frontend Developer, Backend Developer, or Full Stack Developer.`;
+    }
+
+    if (lowerMessage.includes('skill') || lowerMessage.includes('technology')) {
+      return `🔧 Popular starter skills are HTML/CSS, JavaScript, React, and Node.js.`;
+    }
+
+    if (lowerMessage.includes('project')) {
+      return `🎯 Good beginner projects include a personal portfolio, a task tracker, or a small e-commerce landing page.`;
+    }
+
+    if (lowerMessage.includes('assessment')) {
+      return `🧭 I can guide you through a short career assessment. Say "start assessment" to begin.`;
+    }
+
+    return `👋 I’m here to help with your learning path. Ask me about courses, jobs, skills, projects, or assessment.`;
+  }, []);
+
   // Load assessment state from localStorage on mount
   useEffect(() => {
     const savedAssessmentState = localStorage.getItem(`assessment_completed_${user?.id}`);
@@ -197,13 +223,13 @@ export default function Dashboard() {
       console.error('Error:', error);
       setChatMessages([{ 
         type: 'bot', 
-        message: "👋 Welcome! Which path interests you most? Frontend, Backend, or Full Stack?" 
+        message: getLocalFallbackReply('start assessment')
       }]);
       setChatLoading(false);
       assessmentStartedRef.current = false;
       initialMessageSentRef.current = false;
     });
-  }, [userProfile.name, userProfile.skillLevel, userProfile.careerGoal, isAssessed, user?.id]);
+  }, [userProfile.name, userProfile.skillLevel, userProfile.careerGoal, isAssessed, user?.id, getLocalFallbackReply]);
 
   // Fetch Job Matches
   const fetchJobMatches = async () => {
@@ -435,7 +461,7 @@ const handleChatSubmit = async (e) => {
     console.error('Chat error:', error);
     setChatMessages(prev => [...prev, { 
       type: 'bot', 
-      message: "⚠️ I'm having trouble connecting. Please make sure the backend is reachable and that the API URL is configured correctly." 
+      message: getLocalFallbackReply(userMessage)
     }]);
   } finally {
     setChatLoading(false);
