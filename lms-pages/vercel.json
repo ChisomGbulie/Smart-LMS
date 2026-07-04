@@ -6,6 +6,10 @@
   "outputDirectory": "dist",
   "rewrites": [
     {
+      "source": "/api/(.*)",
+      "destination": "https://smart-lms-production-adec.up.railway.app/api/$1"
+    },
+    {
       "source": "/(.*)",
       "destination": "/"
     }

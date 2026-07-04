@@ -25,7 +25,8 @@ import {
 
 export default function Dashboard() {
   const navigate = useNavigate()
-  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001'
+  const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '')
+  const CHAT_API_URL = API_BASE_URL ? `${API_BASE_URL}/api/chat` : '/api/chat'
   const [user, setUser] = useState(null)
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState('overview')
@@ -168,7 +169,7 @@ export default function Dashboard() {
     setChatLoading(true);
     
     // Send the API call directly
-    fetch(`${API_BASE_URL}/api/chat`, {
+    fetch(CHAT_API_URL, {
       method: 'POST',
       headers: { 
         'Content-Type': 'application/json',
@@ -353,7 +354,7 @@ const handleChatSubmit = async (e) => {
   try {
     console.log('Sending message:', userMessage);
     
-    const response = await fetch(`${API_BASE_URL}/api/chat`, {
+    const response = await fetch(CHAT_API_URL, {
       method: 'POST',
       headers: { 
         'Content-Type': 'application/json',
@@ -434,7 +435,7 @@ const handleChatSubmit = async (e) => {
     console.error('Chat error:', error);
     setChatMessages(prev => [...prev, { 
       type: 'bot', 
-      message: "⚠️ I'm having trouble connecting. Please make sure the server is running on port 3001 and try again." 
+      message: "⚠️ I'm having trouble connecting. Please make sure the backend is reachable and that the API URL is configured correctly." 
     }]);
   } finally {
     setChatLoading(false);

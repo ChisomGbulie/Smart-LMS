@@ -7,13 +7,21 @@ dotenv.config();
 const supabaseUrl = process.env.VITE_SUPABASE_URL;
 const supabaseKey = process.env.VITE_SUPABASE_ANON_KEY;
 
-const supabase = createClient(supabaseUrl, supabaseKey);
+const supabase = supabaseUrl && supabaseKey ? createClient(supabaseUrl, supabaseKey) : null;
+
+function ensureSupabaseConfigured() {
+  if (!supabase) {
+    throw new Error('Supabase is not configured. Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.');
+  }
+}
 
 /**
  * Save user assessment to database
  */
 export async function saveAssessment(userId, assessmentData) {
   try {
+    ensureSupabaseConfigured();
+
     // Check if assessment already exists
     const { data: existing } = await supabase
       .from('user_assessments')
@@ -63,6 +71,8 @@ export async function saveAssessment(userId, assessmentData) {
  */
 export async function getAssessment(userId) {
   try {
+    ensureSupabaseConfigured();
+
     const { data, error } = await supabase
       .from('user_assessments')
       .select('*')
@@ -88,6 +98,8 @@ export async function getAssessment(userId) {
  */
 export async function saveLearningPath(userId, pathData) {
   try {
+    ensureSupabaseConfigured();
+
     // First, get the assessment ID
     const { data: assessment } = await supabase
       .from('user_assessments')
@@ -145,6 +157,8 @@ export async function saveLearningPath(userId, pathData) {
  */
 export async function getLearningPath(userId) {
   try {
+    ensureSupabaseConfigured();
+
     const { data, error } = await supabase
       .from('learning_paths')
       .select('*')
@@ -170,6 +184,8 @@ export async function getLearningPath(userId) {
  */
 export async function deleteAssessment(userId) {
   try {
+    ensureSupabaseConfigured();
+
     await supabase
       .from('learning_paths')
       .delete()
